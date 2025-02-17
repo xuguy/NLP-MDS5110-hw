@@ -404,8 +404,8 @@ def load_word2vec():
     return wv_from_bin
 
 
-wv_from_bin = load_word2vec()
-dir(wv_from_bin)
+# wv_from_bin = load_word2vec()
+# dir(wv_from_bin)
 import pickle
 file_name = 'wv_from_bin.pkl'
 
@@ -417,7 +417,7 @@ file_name = 'wv_from_bin.pkl'
 with open(file_name, 'rb') as f:
     wv_from_bin = pickle.load(f)
 
-words_tmp = list(wv_from_bin.key_to_index.keys())
+# words_tmp = list(wv_from_bin.key_to_index.keys())
 
 # ===== reducing dimensionality =====
 import numpy as np
@@ -528,4 +528,271 @@ plot_embeddings(M_reduced, word2Ind, words)
 ''' 
 
 # find polysemous words:
-wv_from_bin.key_to_index.keys()
+'''
+思路：1. 筛选出长度大于6的词，这些长词大部分都是名词、形容词、副词，这些词才好判断词义 2. 重点考察名词、形容词
+'''
+vocabList = list(wv_from_bin.key_to_index.keys())
+len(vocabList) # 1193514
+
+def find_alpha(vocab, word_length=4):
+    wordsAlpha = []
+    # 找出前1000词中，由纯字母构成的词：str.isalpha()
+    for word in vocab[:1000]:
+        if word.isalpha() and len(word) >=word_length:
+            wordsAlpha.append(word)
+    return wordsAlpha
+# 筛选出长度大于或等于5的词，因为大多数非形容词长度都比较小
+alpha = find_alpha(vocabList[:1000], word_length = 6)
+print(alpha)
+def polysemous(candidate_words= ["leaves", "scoop"]):
+
+    for word in candidate_words:
+        try:
+            top_10_similar = wv_from_bin.most_similar(word, topn=10)
+            top_10_words = [w for w, _ in top_10_similar]
+
+            # Check if the top-10 similar words contain evidence of multiple meanings
+            # (e.g., related words from both senses)
+            # This is a heuristic and may need adjustment based on the word.
+            if len(set(top_10_words)) >= 2:  # At least two distinct meanings
+                print(f"Testing word: {word}")
+                print(f"Top 10 similar words: \n{top_10_words}\n")
+                
+        except KeyError:
+            print('words not found in vocab')
+            continue
+
+candidate_words = ['hard', 'summit' ,'tomorrow', 'little', 'believe'] 
+polysemous(candidate_words)
+
+'''
+Testing word: hard
+Top 10 similar words: 
+['even', 'bad', 'fall', 'shit', 'its', 'harder', 'it', 'nothing', 'way', 'fast']
+
+Testing word: summit
+Top 10 similar words: 
+['conference', 'alliance', 'convention', 'international', 'district', 'academy', 'development', 'chamber', 'arts', 'center']
+
+Testing word: tomorrow
+Top 10 similar words: 
+['saturday', 'monday', 'friday', 'tonight', 'thursday', 'wednesday', 'today', 'soon', 'tuesday', 'coming']
+
+Testing word: little
+Top 10 similar words: 
+['look', 'girl', 'like', 'pretty', 'kid', 'big', 'old', 'my', 'lady', 'one']
+
+Testing word: believe
+Top 10 similar words: 
+['remember', 'never', 'one', 'wanted', 'forget', 'we', 'see', 'let', 'rush', 'meet']
+
+'''
+
+# synonyms # antonyms
+
+# prototype
+# ------------------
+# Write your synonym & antonym exploration code here.
+
+
+w1 = "hard"
+w2 = "difficult"
+w3 = "easy"
+w1_w2_dist = wv_from_bin.distance(w1, w2)
+w1_w3_dist = wv_from_bin.distance(w1, w3)
+
+print("Synonyms {}, {} have cosine distance: {}".format(w1, w2, w1_w2_dist))
+print("Antonyms {}, {} have cosine distance: {}".format(w1, w3, w1_w3_dist))
+'''
+Synonyms hard, difficult have cosine distance: 0.24550330638885498
+Antonyms hard, easy have cosine distance: 0.1183176040649414
+'''
+# ------------------
+'''
+如何能找到更多的(w1, w2, w3)?
+https://cdn1.byjus.com/wp-content/uploads/2020/06/Synonyms-and-Antonyms-List.pdf
+'''
+
+def check_w13_smaller_w12(comb):
+    w1, w2, w3 = comb
+    w1_w2_dist = wv_from_bin.distance(w1, w2)
+    w1_w3_dist = wv_from_bin.distance(w1, w3)
+
+    if w1_w3_dist < w1_w2_dist:
+        out = f'dist(w1, w3): {w1_w3_dist:.4f}, dist(w1, w2): {w1_w2_dist:.4f}'
+        print(out)
+        return True
+    else:
+        out = f'dist(w1, w3): {w1_w3_dist:.4f}, dist(w1, w2): {w1_w2_dist:.4f}'
+        print(out)
+        return False
+
+combinations = [('hard', 'difficult', 'easy'), ('abound', 'flourish', 'deficient')]
+
+for comb in combinations:
+    check_w13_smaller_w12(comb)
+
+# =============== TASK 3 ===============
+
+wv_from_bin.most_similar(positive=['woman', 'grandfather'], negative=['man'])
+'''
+[('grandmother', 0.878795325756073),
+ ('deceased', 0.8755999803543091),
+ ('grandson', 0.8732503652572632),
+ ('granddaughter', 0.8626090884208679),
+ ('mother-in-law', 0.8423668742179871),
+ ('stabs', 0.8338027596473694),
+ ('adopted', 0.8286494612693787),
+ ('marries', 0.825094997882843),
+ ('brother-in-law', 0.8129834532737732),
+ ('fiancee', 0.8020613193511963)]
+'''
+# my answer:
+wv_from_bin.most_similar(positive=['king', 'mother'],negative=['queen'])
+'''
+[('father', 0.9109837412834167),
+ ('called', 0.894909679889679),
+ ('child', 0.8890705704689026),
+ ('said', 0.881404459476471),
+ ('woman', 0.8805525302886963),
+ ('told', 0.8771608471870422),
+ ('wife', 0.8754846453666687),
+ ('daughter', 0.8657993078231812),
+ ('dad', 0.8648059964179993),
+ ('heard', 0.862002432346344)]
+'''
+
+wv_from_bin.most_similar(wv_from_bin.get_vector('have')-wv_from_bin.get_vector('food')+wv_from_bin.get_vector('shoes'))
+'''
+[('wore', 0.8886487483978271),
+ ('wearing', 0.8869256973266602),
+ ('wear', 0.8861392736434937),
+ ('shirt', 0.8839967846870422),
+ ('pair', 0.8752208352088928),
+ ('wears', 0.8669461607933044),
+ ('shoes', 0.8646951913833618),
+ ('both', 0.8637152314186096),
+ ('tie', 0.8606826066970825),
+ ('won', 0.8483160138130188)]
+'''
+
+
+# sentence embedding:
+import gensim.downloader as api
+from nltk.tokenize import word_tokenize
+
+model = api.load('glove-twitter-25')
+
+
+def get_sentence_embedding(model, sentence):
+    """ Calcs sentence embedding as a mean of known word embeddings in the sentence.
+    If all the words are unknown, returns zero vector.
+    :param model: KeyedVectors instance
+    :param sentence: str or list of str (tokenized text)
+    """
+    embedding = np.zeros([model.vector_size], dtype='float32')
+
+    if isinstance(sentence, str):
+        words = word_tokenize(sentence.lower())
+    else:
+        words = sentence
+
+    sum_embedding = np.zeros([model.vector_size], dtype='float32')
+    words_in_model = 0
+
+    # ------------------
+    # Write your implementation here.
+    vocabList = list(model.key_to_index.keys())
+    for word in words:
+        if word in vocabList:
+            sum_embedding += model.get_vector(word)
+            words_in_model +=1
+    # make sure sentence embedding has at least 1 word:
+    if words_in_model > 0:
+        embedding = sum_embedding/words_in_model
+
+    return embedding
+    # ------------------
+
+'''
+注意，原题目中的vector = get_sentence_embedding(model, "I'm very sure. This never happened to me before...")
+assert vector.shape == (model.vector_size,)
+
+... 会被tokenize 为'...'，我们的vocab里不存在这个东西，所以把这三个点换成了单个点，表示句号
+'''
+vector = get_sentence_embedding(model, "I'm very sure. This never happened to me before...")
+assert vector.shape == (model.vector_size,)
+
+
+# getting sentence embedding from quora.csv
+import pandas as pd
+
+quora_data = pd.read_csv('train.csv')
+
+# corpus len=997, because there may be duplicate question
+# also not that we randomly sample(1000) from dataset, so corpus will differ
+corpus = list(quora_data.sample(1000)[['question1']].question1.replace(np.nan, '', regex=True).unique())
+
+# text_vector.shape (997, 25)
+# might take ~30s to run this line
+text_vectors = np.array([get_sentence_embedding(model, sentence) for sentence in corpus])
+# check
+corpus[0]
+text_vectors[0]
+
+# ========================================
+# find the nearest question:
+'''
+Calc the similarity between query embedding and text_vectors using cosine_similarity function. Find k vectors with highest scores and return corresponding texts from texts list.
+'''
+from sklearn.metrics.pairwise import cosine_similarity
+
+def find_nearest(model, text_vectors, texts, query, k=10):
+    query_vec = get_sentence_embedding(model, query)
+
+    # ------------------
+    # Write your implementation here.
+    sen_emb = get_sentence_embedding(model, query)
+
+    # squeeze() to reshape c from (1, n) to (n,)
+    cos_srt = cosine_similarity(sen_emb.reshape(1, -1), text_vectors).squeeze()
+
+    # the bigger cosine_similarity the more similar
+    # so sort c in descenet order: -1*cos_srt
+    top_k_ind =((-cos_srt).squeeze().argsort())[:k]
+
+    # convert indices to question text
+    top_k_q = [corpus[q] for q in top_k_ind]
+    print(f'query: {query}')
+    return top_k_q
+    # ------------------
+
+find_nearest(model, text_vectors, corpus, "What's your biggest regret in life?", k=5)
+
+
+# ====================================
+# bias
+print(model.most_similar(positive=['he', 'blue'], negative=['she']))
+'''
+[('red', 0.9298717975616455), ('grey', 0.8770253658294678), ('gold', 0.8569556474685669), ('golden', 0.8560071587562561), ('green', 0.8503260612487793), ('silver', 0.8307074904441833), ('black', 0.8287413716316223), ('yellow', 0.8248174786567688), ('iron', 0.8127517104148865), ('series', 0.812469482421875)]
+'''
+print()
+print(model.most_similar(positive=['she', 'red'], negative=['he']))
+'''
+[('white', 0.9437015652656555), ('black', 0.933352530002594), ('blue', 0.9333339929580688), ('purple', 0.9230028390884399), ('yellow', 0.9003236889839172), ('green', 0.8979281187057495), ('pink', 0.888805627822876), ('dark', 0.8869737982749939), ('diamond', 0.8821786642074585), ('shoes', 0.8815739750862122)]
+'''
+
+print(model.most_similar(positive=['she', 'pink'], negative=['he']))
+'''
+[('purple', 0.9068183898925781), ('kitty', 0.8901638984680176), ('owl', 0.8743062615394592), ('lipstick', 0.871708869934082), ('doll', 0.8683035969734192), ('flower', 0.8642860651016235), ('rainbow', 0.84818035364151), ('bow', 0.8480937480926514), ('dress', 0.8387206196784973), ('bunny', 0.8371613621711731)]
+'''
+
+
+print(model.most_similar(positive=['rich', 'house'], negative=['poor']))
+
+print(model.most_similar(positive=['rich', 'white'], negative=['poor']))
+
+
+
+
+
