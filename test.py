@@ -525,5 +525,7 @@ plot_embeddings(M_reduced, word2Ind, words)
 
 3. Find a polysemous word (for example, "leaves" or "scoop") such that the top-10 most similar words (according to cosine similarity) contains related words from both meanings. For example, "leaves" has both "turns" and "ground" in the top 10, and "scoop" has both "buckets" and "pops" 是什么意思？turns和ground有什么联系？随便输入一个词，他的top10里面都有不一样意思的词啊？
 
-4.a
 ''' 
+
+# find polysemous words:
+wv_from_bin.key_to_index.keys()
