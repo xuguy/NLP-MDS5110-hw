@@ -794,5 +794,11 @@ print(model.most_similar(positive=['rich', 'white'], negative=['poor']))
 
 
 
+# ============ below are trash code ==================
+
+
+
+
+
 
 
