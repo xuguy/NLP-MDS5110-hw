@@ -525,11 +525,6 @@ plot_embeddings(M_reduced, word2Ind, words)
 
 3. Find a polysemous word (for example, "leaves" or "scoop") such that the top-10 most similar words (according to cosine similarity) contains related words from both meanings. For example, "leaves" has both "turns" and "ground" in the top 10, and "scoop" has both "buckets" and "pops" 是什么意思？turns和ground有什么联系？随便输入一个词，他的top10里面都有不一样意思的词啊？
 
-4. 最开始处理contexts: central_words_tmp = np.array([word for word, context in contexts if len(context) == 2 * window_size and word != 0])
-为什么word !=0? 这里的word指的是contexts里的中心词，word=0又如何呢？
-
-5. 我们从来没有生成过co-occurence matrix，到底想问什么？
-
 ''' 
 
 # find polysemous words:
